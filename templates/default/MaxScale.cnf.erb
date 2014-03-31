@@ -1,0 +1,138 @@
+#
+# Number of server threads
+# Valid options are:
+#   threads=<number of threads>
+
+[maxscale]
+threads=<%= @node['maxscale']['threads'] %>
+
+
+
+
+# Define a monitor that can be used to determine the state and role of
+# the servers.
+#
+# Valid options are:
+#
+#   module=<name of module to load>
+#   servers=<server name>,<server name>,...
+#   user =<user name - must have slave replication and 
+#                          slave client privileges>
+#   passwd=<password of the above user, plain text currently>
+
+<% if @node['maxscale']['monitor']['enabled'] == true %>
+
+[Galera Monitor]
+type=<%= @node['maxscale']['monitor']['type'] %>
+module=<%= @node['maxscale']['monitor']['module'] %>
+servers=<%= (1..@node['maxscale']['servers'].size).to_a.map {|x| "max#{x}" }.join(',') %>
+user=<%= @node['maxscale']['monitor']['user'] %>
+passwd=<%= @node['maxscale']['monitor']['passwd'] %>
+
+<% end %>
+
+
+
+# A series of service definition
+#
+# Valid options are:
+#
+#   router=<name of router module>
+#   servers=<server name>,<server name>,...
+#   user=<User to fetch password information with>
+#   passwd=<Password of the user, plain text currently>
+#
+# Valid router modules currently are:
+#   readwritesplit, readconnroute and debugcli
+
+<% if @node['maxscale']['galera_svc']['enabled'] == true %>
+
+[Galera Service]
+type=<%= @node['maxscale']['galera_svc']['type'] %>
+router=<%= @node['maxscale']['galera_svc']['router'] %>
+router_options=<%= @node['maxscale']['galera_svc']['router_options'] %>
+servers=<%= (1..@node['maxscale']['servers'].size).to_a.map {|x| "max#{x}" }.join(',') %>
+user=<%= @node['maxscale']['galera_svc']['user'] %>
+passwd=<%= @node['maxscale']['galera_svc']['passwd'] %>
+
+<% end %>
+
+
+
+<% if @node['maxscale']['httpd_router']['enabled'] == true %>
+
+[HTTPD Router]
+type=service
+router=<%= @node['maxscale']['httpd_router']['router'] %>
+servers=max1
+
+<% end %>
+
+
+
+<% if @node['maxscale']['debug']['enabled'] == true %>
+
+[Debug Interface]
+type=service
+router=<%= @node['maxscale']['debug']['router'] %>
+servers=<%= (1..@node['maxscale']['servers'].size).to_a.map {|x| "max#{x}" }.join(',') %>
+
+<% end %>
+
+
+
+
+# Listener definitions for the services
+#
+# Valid options are:
+#
+#   service=<name of service defined elsewhere>
+#   protocol=<name of protocol module with which to listen>
+#   port=<Listening port>
+
+<% if @node['maxscale']['galera_listener']['enabled'] == true %>
+
+[Galera Listener]
+type=listener
+service=Galera Service
+protocol=<%= @node['maxscale']['galera_listener']['protocol'] %>
+port=<%= @node['maxscale']['galera_listener']['port'] %>
+
+<% end %>
+
+
+<% if @node['maxscale']['debug_listener']['enabled'] == true %>
+
+[Debug Listener]
+type=listener
+service=Debug Interface
+protocol=<%= @node['maxscale']['debug_listener']['protocol'] %>
+port=<%= @node['maxscale']['debug_listener']['protocol'] %>
+
+<% end %>
+
+
+
+<% if @node['maxscale']['httpd_listener']['enabled'] == true %>
+
+[HTTPD Listener]
+type=listener
+service=HTTPD Router
+protocol=<%= @node['maxscale']['httpd_listener']['protocol'] %>
+port=<%= @node['maxscale']['httpd_listener']['protocol'] %>
+
+<% end %>
+
+
+
+# Definition of the servers
+
+<%- @node['maxscale']['servers'].each_with_index do |server, i| -%>
+
+[max<%= i+1 %>]
+type=<%= server['type'] %>
+address=<%= server['address'] %>
+port=<%= server['port'] %>
+protocol=<%= server['protocol'] %>
+
+<%- end -%>    
