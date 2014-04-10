@@ -7,7 +7,7 @@ dir = node['maxscale']['install_dir']
 
 execute "install-maxscale" do
   archive = node['maxscale']['archive']
-  command "mkdir -p #{dir} && cd #{dir} && curl https://downloads.skysql.com/files/SkySQL/MaxScale/#{archive} > #{archive} && tar zxf #{archive}"
+  command "mkdir -p #{dir} && cd #{dir} && curl https://downloads.skysql.com/files/SkySQL/MaxScale/#{archive} > #{archive} && mkdir maxscale && tar zxf #{archive} -C maxscale"
   action :run
   not_if File.exists?(File.join([dir, 'maxscale']))
 end
