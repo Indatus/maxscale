@@ -10,7 +10,7 @@ execute "install-maxscale" do
   ext_to = File.basename(archive, ".tar.gz").gsub("maxscale.", "maxscale-")
   command "mkdir -p #{dir} && cd #{dir} && curl https://downloads.skysql.com/files/SkySQL/MaxScale/#{archive} > #{archive} && tar zxf #{archive} && mv #{ext_to} maxscale"
   action :run
-  not_if File.exists?(File.join([dir, 'maxscale']))
+  not_if { File.exists?(File.join([dir, 'maxscale'])) }
 end
 
 template File.join([dir, 'maxscale', 'maxstart.sh']) do
